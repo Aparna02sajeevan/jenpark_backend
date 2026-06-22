@@ -6,7 +6,8 @@ const router = express.Router();
 router.use(healthRoutes);
 
 // Mount additional feature routers here:
-// router.use('/auth', require('./auth.routes'));
-// router.use('/users', require('./user.routes'));
+router.use('/auth', require('./auth.routes'));
+router.use('/users', require('./user.routes'));
+router.use('/vehicles', require('./vehicle.routes'));
 
 module.exports = router;

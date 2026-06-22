@@ -26,6 +26,8 @@ module.exports = {
     secretKey: process.env.AWS_SECRET_KEY,
     bucket: process.env.AWS_BUCKET,
     region: process.env.AWS_REGION,
+    endpoint: process.env.AWS_ENDPOINT,
+    cdnUrl: process.env.AWS_CDN_URL,
   },
   corsOrigin: process.env.CORS_ORIGIN || '*',
   logLevel: process.env.LOG_LEVEL || 'info',

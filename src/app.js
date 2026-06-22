@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -36,6 +38,9 @@ app.use(
 // Swagger docs
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 app.get('/api/docs.json', (_req, res) => res.json(swaggerSpec));
+
+// Static file serving for uploads (profile pictures, etc.)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Versioned API
 app.use(env.apiPrefix, routes);
