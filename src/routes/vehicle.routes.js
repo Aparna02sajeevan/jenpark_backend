@@ -269,4 +269,36 @@ router.get(
   vehicleController.getHistory
 );
 
+/**
+ * @openapi
+ * /vehicles/{id}:
+ *   delete:
+ *     summary: Delete a vehicle check-in record (only by the user who registered it)
+ *     tags: [Vehicles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The vehicle record ID
+ *     responses:
+ *       200:
+ *         description: Vehicle check-in record deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - only the user who registered this vehicle can delete it
+ *       404:
+ *         description: Vehicle record not found
+ */
+router.delete(
+  '/:id',
+  authenticate,
+  validate(vehicleValidator.deleteById),
+  vehicleController.deleteVehicle
+);
+
 module.exports = router;

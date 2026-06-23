@@ -73,6 +73,15 @@ const revenueStats = {
   }),
 };
 
+const deleteById = {
+  params: Joi.object({
+    id: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
+      'string.pattern.base': 'Invalid vehicle record ID format',
+      'any.required': 'Vehicle record ID is required',
+    }),
+  }),
+};
+
 module.exports = {
   checkIn,
   checkOut,
@@ -80,4 +89,5 @@ module.exports = {
   getById,
   getHistory,
   revenueStats,
+  deleteById,
 };

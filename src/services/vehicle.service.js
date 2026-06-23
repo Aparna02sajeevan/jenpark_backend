@@ -269,6 +269,26 @@ async function getRevenueStats(query, user) {
   return stats;
 }
 
+/**
+ * Delete a vehicle check-in record
+ * @param {string} id
+ * @param {Object} user
+ * @returns {Promise<void>}
+ */
+async function deleteVehicle(id, user) {
+  const vehicle = await vehicleRepository.findById(id);
+  if (!vehicle) {
+    throw new ApiError(404, 'Vehicle check-in record not found');
+  }
+
+  // Only the user who registered the vehicle can delete it
+  if (vehicle.addedBy.toString() !== user.id) {
+    throw new ApiError(403, 'Forbidden: Only the user who registered this vehicle can delete it');
+  }
+
+  await vehicleRepository.deleteById(id);
+}
+
 module.exports = {
   checkInVehicle,
   checkOutVehicle,
@@ -277,4 +297,5 @@ module.exports = {
   getVehicleHistory,
   getVehicleTimesById,
   getRevenueStats,
+  deleteVehicle,
 };

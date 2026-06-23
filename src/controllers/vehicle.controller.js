@@ -84,6 +84,15 @@ const getRevenueStats = asyncHandler(async (req, res) => {
   });
 });
 
+const deleteVehicle = asyncHandler(async (req, res) => {
+  await vehicleService.deleteVehicle(req.params.id, req.user);
+  return success(res, {
+    statusCode: 200,
+    message: 'Vehicle check-in record deleted successfully',
+    data: null,
+  });
+});
+
 module.exports = {
   checkIn,
   checkOut,
@@ -92,4 +101,5 @@ module.exports = {
   getHistory,
   getTimes,
   getRevenueStats,
+  deleteVehicle,
 };
