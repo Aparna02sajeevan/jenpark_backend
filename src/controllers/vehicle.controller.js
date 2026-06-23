@@ -1,11 +1,22 @@
 const asyncHandler = require('../utils/asyncHandler');
 const vehicleService = require('../services/vehicle.service');
 const { success } = require('../utils/ApiResponse');
+const { uploadToS3 } = require('../utils/s3');
 
 const checkIn = asyncHandler(async (req, res) => {
-  // addedBy comes from authenticated user payload (set by authenticate middleware)
   const employeeId = req.user.id;
-  const vehicle = await vehicleService.checkInVehicle(req.body, employeeId);
+  const vehicleData = { ...req.body };
+
+  if (req.file) {
+    vehicleData.plateImage = await uploadToS3(
+      req.file.buffer,
+      req.file.originalname,
+      'vehicles',
+      req.file.mimetype
+    );
+  }
+
+  const vehicle = await vehicleService.checkInVehicle(vehicleData, employeeId);
   
   return success(res, {
     statusCode: 201,
@@ -15,7 +26,7 @@ const checkIn = asyncHandler(async (req, res) => {
 });
 
 const checkOut = asyncHandler(async (req, res) => {
-  const vehicle = await vehicleService.checkOutVehicle(req.params.id);
+  const vehicle = await vehicleService.checkOutVehicle(req.params.id, req.user);
   return success(res, {
     statusCode: 200,
     message: 'Vehicle checked out successfully',
@@ -24,7 +35,7 @@ const checkOut = asyncHandler(async (req, res) => {
 });
 
 const getById = asyncHandler(async (req, res) => {
-  const vehicle = await vehicleService.getVehicleById(req.params.id);
+  const vehicle = await vehicleService.getVehicleById(req.params.id, req.user);
   return success(res, {
     statusCode: 200,
     message: 'Vehicle details retrieved successfully',
@@ -33,7 +44,7 @@ const getById = asyncHandler(async (req, res) => {
 });
 
 const list = asyncHandler(async (req, res) => {
-  const result = await vehicleService.listVehicles(req.query);
+  const result = await vehicleService.listVehicles(req.query, req.user);
   return success(res, {
     statusCode: 200,
     message: 'Vehicles listed successfully',
@@ -47,7 +58,7 @@ const list = asyncHandler(async (req, res) => {
 });
 
 const getHistory = asyncHandler(async (req, res) => {
-  const history = await vehicleService.getVehicleHistory(req.params.vehicleNumber);
+  const history = await vehicleService.getVehicleHistory(req.params.vehicleNumber, req.user);
   return success(res, {
     statusCode: 200,
     message: 'Vehicle history retrieved successfully',
@@ -56,7 +67,7 @@ const getHistory = asyncHandler(async (req, res) => {
 });
 
 const getTimes = asyncHandler(async (req, res) => {
-  const times = await vehicleService.getVehicleTimesById(req.params.id);
+  const times = await vehicleService.getVehicleTimesById(req.params.id, req.user);
   return success(res, {
     statusCode: 200,
     message: 'Vehicle times retrieved successfully',

@@ -16,14 +16,30 @@ async function uploadFile(file) {
     const fileName =
         `users/${Date.now()}-${file.originalname}`;
 
-    await s3Client.send(
-        new PutObjectCommand({
-            Bucket: env.aws.bucket,
-            Key: fileName,
-            Body: file.buffer,
-            ContentType: file.mimetype,
-        })
-    );
+    try {
+        await s3Client.send(
+            new PutObjectCommand({
+                Bucket: env.aws.bucket,
+                Key: fileName,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+            })
+        );
+    } catch (err) {
+        if (err.$response && err.$response.body) {
+            try {
+                const chunks = [];
+                for await (const chunk of err.$response.body) {
+                    chunks.push(chunk);
+                }
+                const bodyString = Buffer.concat(chunks).toString('utf-8');
+                console.error(`[S3 Upload Error] Raw response body: ${bodyString}`);
+            } catch (readErr) {
+                // Ignore read error
+            }
+        }
+        throw err;
+    }
 
     return `${env.aws.cdnUrl}/${fileName}`;
 }

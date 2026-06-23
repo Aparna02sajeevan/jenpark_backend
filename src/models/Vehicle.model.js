@@ -10,6 +10,7 @@ const mongoose = require('mongoose');
  *         _id: { type: string }
  *         vehicleNumber: { type: string, example: "KA-01-MG-1234" }
  *         ownerName: { type: string, example: "John Doe" }
+ *         ownerPhoneNumber: { type: string, example: "+1234567890" }
  *         plateImage: { type: string, example: "/uploads/plate_1717643920.jpg" }
  *         checkInTime: { type: string, format: date-time }
  *         checkOutTime: { type: string, format: date-time, nullable: true }
@@ -21,6 +22,7 @@ const vehicleSchema = new mongoose.Schema(
   {
     vehicleNumber: { type: String, required: true, uppercase: true, trim: true, index: true },
     ownerName: { type: String, required: true, trim: true },
+    ownerPhoneNumber: { type: String, required: true, trim: true },
     plateImage: { type: String, required: true, trim: true },
     checkInTime: { type: Date, required: true, default: Date.now },
     checkOutTime: { type: Date, default: null },

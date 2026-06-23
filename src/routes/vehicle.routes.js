@@ -24,6 +24,7 @@ const router = express.Router();
  *             required:
  *               - vehicleNumber
  *               - ownerName
+ *               - ownerPhoneNumber
  *               - plateImage
  *             properties:
  *               vehicleNumber:
@@ -32,6 +33,9 @@ const router = express.Router();
  *               ownerName:
  *                 type: string
  *                 example: "John Doe"
+ *               ownerPhoneNumber:
+ *                 type: string
+ *                 example: "+1234567890"
  *               plateImage:
  *                 type: string
  *                 format: binary
@@ -50,7 +54,7 @@ router.post(
   upload.single('plateImage'),
   (req, res, next) => {
     if (req.file) {
-      req.body.plateImage = req.file.location || `/uploads/${req.file.filename}`;
+      req.body.plateImage = req.file.originalname || 'file_uploaded';
     }
     next();
   },

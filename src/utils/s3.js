@@ -28,13 +28,29 @@ async function uploadToS3(buffer, originalName, folder, mimeType) {
         .replace(/[^a-z0-9]/g, '-');          // sanitise filename
     const key = `${folder}/${Date.now()}-${baseName}${ext}`;
 
-    await s3.send(new PutObjectCommand({
-        Bucket: env.aws.bucket,
-        Key: key,
-        Body: buffer,
-        ContentType: mimeType,
-        ACL: 'public-read',
-    }));
+    try {
+        await s3.send(new PutObjectCommand({
+            Bucket: env.aws.bucket,
+            Key: key,
+            Body: buffer,
+            ContentType: mimeType,
+            ACL: 'public-read',
+        }));
+    } catch (err) {
+        if (err.$response && err.$response.body) {
+            try {
+                const chunks = [];
+                for await (const chunk of err.$response.body) {
+                    chunks.push(chunk);
+                }
+                const bodyString = Buffer.concat(chunks).toString('utf-8');
+                console.error(`[S3 Upload Error] Raw response body: ${bodyString}`);
+            } catch (readErr) {
+                // Ignore read error
+            }
+        }
+        throw err;
+    }
 
     // Returns e.g. https://s3.diginexatechnologies.com/jenpark/users/1781244786258-new.jpeg
     return `${env.aws.cdnUrl}/${key}`;
