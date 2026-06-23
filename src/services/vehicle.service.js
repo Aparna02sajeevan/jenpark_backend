@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const vehicleRepository = require('../repositories/vehicle.repository');
 const ApiError = require('../utils/ApiError');
 
@@ -22,6 +23,7 @@ async function checkInVehicle(data, userId) {
     vehicleNumber: data.vehicleNumber,
     ownerName: data.ownerName,
     ownerPhoneNumber: data.ownerPhoneNumber,
+    parkingSlot: data.parkingSlot,
     plateImage: data.plateImage,
     addedBy: userId,
   });
@@ -33,9 +35,10 @@ async function checkInVehicle(data, userId) {
  * Check-out a vehicle
  * @param {string} id 
  * @param {Object} user 
+ * @param {Object} data
  * @returns {Promise<Object>}
  */
-async function checkOutVehicle(id, user) {
+async function checkOutVehicle(id, user, data = {}) {
   const vehicle = await vehicleRepository.findById(id);
   if (!vehicle) {
     throw new ApiError(404, 'Vehicle check-in record not found');
@@ -51,6 +54,17 @@ async function checkOutVehicle(id, user) {
   }
 
   vehicle.checkOutTime = new Date();
+
+  // Calculate or assign revenue
+  if (data.revenue !== undefined) {
+    vehicle.revenue = Number(data.revenue);
+  } else {
+    // 10 units per hour
+    const durationMs = vehicle.checkOutTime.getTime() - vehicle.checkInTime.getTime();
+    const durationHours = Math.ceil(durationMs / (1000 * 60 * 60)) || 1;
+    vehicle.revenue = durationHours * 10;
+  }
+
   await vehicle.save();
 
   return vehicle;
@@ -83,15 +97,15 @@ async function getVehicleById(id, user) {
  * @returns {Promise<{vehicles: Array, count: number}>}
  */
 async function listVehicles(query, user) {
-  const { 
-    vehicleNumber, 
-    ownerName, 
-    addedBy, 
-    isActive, 
-    limit = 50, 
-    skip = 0, 
-    sortBy = 'createdAt', 
-    sortOrder = 'desc' 
+  const {
+    vehicleNumber,
+    ownerName,
+    addedBy,
+    isActive,
+    limit = 50,
+    skip = 0,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
   } = query;
 
   const filter = {};
@@ -186,6 +200,75 @@ async function getVehicleTimesById(id, user) {
   };
 }
 
+async function getRevenueStats(query, user) {
+  const { addedBy, groupBy = 'day' } = query;
+
+  const match = {
+    checkOutTime: { $ne: null }
+  };
+
+  // Enforce access control: non-admins can only see their own revenue
+  if (user && user.role !== 'admin') {
+    match.addedBy = new mongoose.Types.ObjectId(user.id);
+  } else if (addedBy) {
+    match.addedBy = new mongoose.Types.ObjectId(addedBy);
+  }
+
+  if (groupBy === 'user') {
+    const stats = await vehicleRepository.model.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: "$addedBy",
+          totalRevenue: { $sum: "$revenue" },
+          vehicleCount: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "userDetails"
+        }
+      },
+      { $unwind: "$userDetails" },
+      {
+        $project: {
+          _id: 1,
+          totalRevenue: 1,
+          vehicleCount: 1,
+          "userDetails.name": 1,
+          "userDetails.email": 1
+        }
+      },
+      { $sort: { totalRevenue: -1 } }
+    ]);
+    return stats;
+  }
+
+  let groupFormat = '%Y-%m-%d';
+  if (groupBy === 'month') {
+    groupFormat = '%Y-%m';
+  }
+
+  const stats = await vehicleRepository.model.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: groupFormat, date: "$checkOutTime" }
+        },
+        totalRevenue: { $sum: "$revenue" },
+        vehicleCount: { $sum: 1 }
+      }
+    },
+    { $sort: { _id: -1 } }
+  ]);
+
+  return stats;
+}
+
 module.exports = {
   checkInVehicle,
   checkOutVehicle,
@@ -193,4 +276,5 @@ module.exports = {
   listVehicles,
   getVehicleHistory,
   getVehicleTimesById,
+  getRevenueStats,
 };

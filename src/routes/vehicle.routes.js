@@ -25,6 +25,7 @@ const router = express.Router();
  *               - vehicleNumber
  *               - ownerName
  *               - ownerPhoneNumber
+ *               - parkingSlot
  *               - plateImage
  *             properties:
  *               vehicleNumber:
@@ -36,6 +37,9 @@ const router = express.Router();
  *               ownerPhoneNumber:
  *                 type: string
  *                 example: "+1234567890"
+ *               parkingSlot:
+ *                 type: string
+ *                 example: "Slot-A1"
  *               plateImage:
  *                 type: string
  *                 format: binary
@@ -109,6 +113,40 @@ router.get(
   authenticate,
   validate(vehicleValidator.query),
   vehicleController.list
+);
+
+/**
+ * @openapi
+ * /vehicles/revenue/stats:
+ *   get:
+ *     summary: Get parking revenue statistics grouped by day, month, or user
+ *     tags: [Vehicles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: addedBy
+ *         schema:
+ *           type: string
+ *         description: Filter stats by specific user ID (Admins only)
+ *       - in: query
+ *         name: groupBy
+ *         schema:
+ *           type: string
+ *           enum: [day, month, user]
+ *           default: day
+ *         description: Grouping granularity
+ *     responses:
+ *       200:
+ *         description: Revenue statistics retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  '/revenue/stats',
+  authenticate,
+  validate(vehicleValidator.revenueStats),
+  vehicleController.getRevenueStats
 );
 
 /**

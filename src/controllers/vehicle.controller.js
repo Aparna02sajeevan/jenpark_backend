@@ -26,7 +26,7 @@ const checkIn = asyncHandler(async (req, res) => {
 });
 
 const checkOut = asyncHandler(async (req, res) => {
-  const vehicle = await vehicleService.checkOutVehicle(req.params.id, req.user);
+  const vehicle = await vehicleService.checkOutVehicle(req.params.id, req.user, req.body);
   return success(res, {
     statusCode: 200,
     message: 'Vehicle checked out successfully',
@@ -75,6 +75,15 @@ const getTimes = asyncHandler(async (req, res) => {
   });
 });
 
+const getRevenueStats = asyncHandler(async (req, res) => {
+  const stats = await vehicleService.getRevenueStats(req.query, req.user);
+  return success(res, {
+    statusCode: 200,
+    message: 'Revenue statistics retrieved successfully',
+    data: stats,
+  });
+});
+
 module.exports = {
   checkIn,
   checkOut,
@@ -82,4 +91,5 @@ module.exports = {
   list,
   getHistory,
   getTimes,
+  getRevenueStats,
 };
