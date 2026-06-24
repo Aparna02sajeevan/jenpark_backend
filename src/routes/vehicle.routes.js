@@ -301,4 +301,68 @@ router.delete(
   vehicleController.deleteVehicle
 );
 
+/**
+ * @openapi
+ * /vehicles/{id}:
+ *   put:
+ *     summary: Edit/Update a vehicle check-in record (only by the user who registered it)
+ *     tags: [Vehicles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The vehicle record ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               vehicleNumber:
+ *                 type: string
+ *                 example: "KA-01-MG-1234"
+ *               ownerName:
+ *                 type: string
+ *                 example: "John Doe"
+ *               ownerPhoneNumber:
+ *                 type: string
+ *                 example: "+1234567890"
+ *               parkingSlot:
+ *                 type: string
+ *                 example: "Slot-A1"
+ *               plateImage:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image of the number plate (file upload)
+ *     responses:
+ *       200:
+ *         description: Vehicle record updated successfully
+ *       400:
+ *         description: Validation failed or vehicle already checked in
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - only the user who registered this vehicle can edit it
+ *       404:
+ *         description: Vehicle record not found
+ */
+router.put(
+  '/:id',
+  authenticate,
+  upload.single('plateImage'),
+  (req, res, next) => {
+    if (req.file) {
+      req.body.plateImage = req.file.originalname || 'file_uploaded';
+    }
+    next();
+  },
+  validate(vehicleValidator.update),
+  vehicleController.updateVehicle
+);
+
 module.exports = router;

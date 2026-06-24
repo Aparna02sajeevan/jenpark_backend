@@ -82,6 +82,24 @@ const deleteById = {
   }),
 };
 
+const update = {
+  params: Joi.object({
+    id: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
+      'string.pattern.base': 'Invalid vehicle record ID format',
+      'any.required': 'Vehicle record ID is required',
+    }),
+  }),
+  body: Joi.object({
+    vehicleNumber: Joi.string().min(4).max(20).uppercase().trim().optional(),
+    ownerName: Joi.string().min(2).max(100).trim().optional(),
+    ownerPhoneNumber: Joi.string().min(4).max(20).trim().optional(),
+    parkingSlot: Joi.string().min(1).max(50).trim().optional(),
+    plateImage: Joi.string().optional(),
+  }).min(1).messages({
+    'object.min': 'At least one field (vehicleNumber, ownerName, ownerPhoneNumber, parkingSlot, plateImage) must be provided for update',
+  }),
+};
+
 module.exports = {
   checkIn,
   checkOut,
@@ -90,4 +108,5 @@ module.exports = {
   getHistory,
   revenueStats,
   deleteById,
+  update,
 };

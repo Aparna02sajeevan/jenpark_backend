@@ -93,6 +93,27 @@ const deleteVehicle = asyncHandler(async (req, res) => {
   });
 });
 
+const updateVehicle = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const updateData = { ...req.body };
+
+  if (req.file) {
+    updateData.plateImage = await uploadToS3(
+      req.file.buffer,
+      req.file.originalname,
+      'vehicles',
+      req.file.mimetype
+    );
+  }
+
+  const vehicle = await vehicleService.updateVehicle(id, req.user, updateData);
+  return success(res, {
+    statusCode: 200,
+    message: 'Vehicle check-in record updated successfully',
+    data: vehicle,
+  });
+});
+
 module.exports = {
   checkIn,
   checkOut,
@@ -102,4 +123,5 @@ module.exports = {
   getTimes,
   getRevenueStats,
   deleteVehicle,
+  updateVehicle,
 };

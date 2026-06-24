@@ -289,6 +289,50 @@ async function deleteVehicle(id, user) {
   await vehicleRepository.deleteById(id);
 }
 
+/**
+ * Update a vehicle check-in record
+ * @param {string} id
+ * @param {Object} user
+ * @param {Object} data
+ * @returns {Promise<Object>}
+ */
+async function updateVehicle(id, user, data) {
+  const vehicle = await vehicleRepository.findById(id);
+  if (!vehicle) {
+    throw new ApiError(404, 'Vehicle check-in record not found');
+  }
+
+  // Only the user who registered the vehicle can edit it (neither other users nor admins)
+  if (vehicle.addedBy.toString() !== user.id) {
+    throw new ApiError(403, 'Forbidden: Only the user who registered this vehicle can edit it');
+  }
+
+  // If vehicleNumber is being updated, verify uniqueness across active check-ins
+  if (data.vehicleNumber) {
+    const uppercaseNum = data.vehicleNumber.toUpperCase();
+    if (uppercaseNum !== vehicle.vehicleNumber) {
+      const activeSession = await vehicleRepository.findOne({
+        vehicleNumber: uppercaseNum,
+        checkOutTime: null,
+        _id: { $ne: vehicle._id },
+      });
+      if (activeSession) {
+        throw new ApiError(400, `Vehicle ${data.vehicleNumber} is already checked in and has not checked out yet.`);
+      }
+    }
+  }
+
+  // Update fields
+  if (data.vehicleNumber !== undefined) vehicle.vehicleNumber = data.vehicleNumber.toUpperCase();
+  if (data.ownerName !== undefined) vehicle.ownerName = data.ownerName;
+  if (data.ownerPhoneNumber !== undefined) vehicle.ownerPhoneNumber = data.ownerPhoneNumber;
+  if (data.parkingSlot !== undefined) vehicle.parkingSlot = data.parkingSlot;
+  if (data.plateImage !== undefined) vehicle.plateImage = data.plateImage;
+
+  await vehicle.save();
+  return vehicle;
+}
+
 module.exports = {
   checkInVehicle,
   checkOutVehicle,
@@ -298,4 +342,5 @@ module.exports = {
   getVehicleTimesById,
   getRevenueStats,
   deleteVehicle,
+  updateVehicle,
 };
