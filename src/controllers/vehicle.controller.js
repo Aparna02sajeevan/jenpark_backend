@@ -1,7 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const vehicleService = require('../services/vehicle.service');
 const { success } = require('../utils/ApiResponse');
-const { uploadToS3 } = require('../utils/s3');
+const { uploadToS3, isBase64, uploadBase64ToS3 } = require('../utils/s3');
 
 const checkIn = asyncHandler(async (req, res) => {
   const employeeId = req.user.id;
@@ -14,6 +14,8 @@ const checkIn = asyncHandler(async (req, res) => {
       'vehicles',
       req.file.mimetype
     );
+  } else if (vehicleData.plateImage && isBase64(vehicleData.plateImage)) {
+    vehicleData.plateImage = await uploadBase64ToS3(vehicleData.plateImage, 'vehicles');
   }
 
   const vehicle = await vehicleService.checkInVehicle(vehicleData, employeeId);
@@ -104,6 +106,8 @@ const updateVehicle = asyncHandler(async (req, res) => {
       'vehicles',
       req.file.mimetype
     );
+  } else if (updateData.plateImage && isBase64(updateData.plateImage)) {
+    updateData.plateImage = await uploadBase64ToS3(updateData.plateImage, 'vehicles');
   }
 
   const vehicle = await vehicleService.updateVehicle(id, req.user, updateData);

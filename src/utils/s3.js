@@ -56,4 +56,58 @@ async function uploadToS3(buffer, originalName, folder, mimeType) {
     return `${env.aws.cdnUrl}/${key}`;
 }
 
-module.exports = { s3, uploadToS3 };
+/**
+ * Detects if a string is a base64-encoded image or data URL.
+ * @param {string} str
+ * @returns {boolean}
+ */
+function isBase64(str) {
+    if (typeof str !== 'string') return false;
+    if (str.startsWith('data:image/')) return true;
+    const base64Regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+    return str.length > 50 && base64Regex.test(str);
+}
+
+/**
+ * Decodes and uploads a base64-encoded image string to S3.
+ * @param {string} base64Str - base64 string or data URL
+ * @param {string} folder - target S3 folder
+ * @returns {Promise<string>} - public URL of the uploaded image
+ */
+async function uploadBase64ToS3(base64Str, folder) {
+    let buffer;
+    let mimeType = 'image/jpeg';
+    let ext = '.jpg';
+
+    const matches = base64Str.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-+.]+);base64,(.+)$/);
+    if (matches) {
+        mimeType = matches[1];
+        const base64Data = matches[2];
+        buffer = Buffer.from(base64Data, 'base64');
+        const parts = mimeType.split('/');
+        if (parts.length === 2) {
+            ext = `.${parts[1]}`;
+        }
+    } else {
+        buffer = Buffer.from(base64Str, 'base64');
+        if (buffer.length > 4) {
+            const hex = buffer.toString('hex', 0, 4);
+            if (hex.startsWith('89504e47')) {
+                mimeType = 'image/png';
+                ext = '.png';
+            } else if (hex.startsWith('47494638')) {
+                mimeType = 'image/gif';
+                ext = '.gif';
+            } else if (hex.startsWith('ffd8ff')) {
+                mimeType = 'image/jpeg';
+                ext = '.jpg';
+            }
+        }
+    }
+
+    const originalName = `base64-upload${ext}`;
+    return uploadToS3(buffer, originalName, folder, mimeType);
+}
+
+module.exports = { s3, uploadToS3, isBase64, uploadBase64ToS3 };
+
