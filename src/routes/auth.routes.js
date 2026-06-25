@@ -3,7 +3,7 @@ const router = express.Router();
 const controller = require('../controllers/auth.controller');
 const upload = require('../middlewares/uploads');
 const validate = require('../middlewares/validate');
-const { register, login } = require('../validators/auth.validator');
+const { register, login, updateProfile } = require('../validators/auth.validator');
 const { authenticate } = require('../middlewares/auth');
 
 /**
@@ -22,6 +22,7 @@ const { authenticate } = require('../middlewares/auth');
  *               - name
  *               - email
  *               - password
+ *               - profilePicture
  *             properties:
  *               name:
  *                 type: string
@@ -41,7 +42,7 @@ const { authenticate } = require('../middlewares/auth');
  *               profilePicture:
  *                 type: string
  *                 format: binary
- *                 description: Optional profile picture (file upload)
+ *                 description: Required profile picture (file upload)
  *     responses:
  *       201:
  *         description: Registered and logged in successfully
@@ -111,6 +112,43 @@ router.get(
     '/profile',
     authenticate,
     controller.profile
+);
+
+/**
+ * @openapi
+ * /auth/profile:
+ *   put:
+ *     summary: Update the currently authenticated user's profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Jane Doe"
+ *               profilePicture:
+ *                 type: string
+ *                 format: binary
+ *                 description: Optional profile picture (file upload)
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: Validation failed
+ *       401:
+ *         description: Unauthorized
+ */
+router.put(
+    '/profile',
+    authenticate,
+    upload.single('profilePicture'),
+    validate(updateProfile),
+    controller.updateProfile
 );
 
 /**

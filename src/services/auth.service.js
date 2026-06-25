@@ -12,10 +12,11 @@ async function registerUser(data) {
 
     const passwordHash = await bcrypt.hash(data.password, 10);
 
-    let profilePicture = null;
-    if (data.file) {
-        profilePicture = await s3Service.uploadFile(data.file);
+    if (!data.file) {
+        throw new ApiError(400, 'Profile picture is required');
     }
+
+    const profilePicture = await s3Service.uploadFile(data.file);
 
     const user = await userRepository.createUser({
         name: data.name,
@@ -108,9 +109,31 @@ async function logoutUser(userId) {
     return true;
 }
 
+async function updateProfile(userId, data) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    const updates = {};
+    if (data.name !== undefined) {
+        updates.name = data.name;
+    }
+    if (data.file) {
+        updates.profilePicture = await s3Service.uploadFile(data.file);
+    }
+
+    if (Object.keys(updates).length > 0) {
+        return userRepository.updateUser(userId, updates);
+    }
+
+    return user;
+}
+
 module.exports = {
     registerUser,
     loginUser,
     getProfile,
     logoutUser,
+    updateProfile,
 };

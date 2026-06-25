@@ -49,9 +49,22 @@ const logout =
 
     });
 
+const updateProfile = asyncHandler(async (req, res) => {
+    const user = await authService.updateProfile(req.user.id, {
+        ...req.body,
+        file: req.file ?? null
+    });
+
+    return success(res, {
+        message: 'Profile updated successfully',
+        data: user,
+    });
+});
+
 module.exports = {
     register,
     login,
     profile,
     logout,
+    updateProfile,
 }

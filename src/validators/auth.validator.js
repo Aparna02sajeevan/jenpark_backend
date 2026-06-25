@@ -16,4 +16,10 @@ const register = {
   }),
 };
 
-module.exports = { login, register };
+const updateProfile = {
+  body: Joi.object({
+    name: Joi.string().min(2).max(80).optional(),
+  }),
+};
+
+module.exports = { login, register, updateProfile };
