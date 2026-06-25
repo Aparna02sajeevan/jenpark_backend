@@ -50,6 +50,11 @@ const logout =
     });
 
 const updateProfile = asyncHandler(async (req, res) => {
+
+
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
     const user = await authService.updateProfile(req.user.id, {
         ...req.body,
         file: req.file ?? null
