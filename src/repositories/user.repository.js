@@ -22,8 +22,8 @@ async function deleteUser(id) {
 async function updateUser(id, data) {
     return User.findByIdAndUpdate(
         id,
-        data,
-        { new: true }
+        { $set: data },
+        { new: true, runValidators: true }
     );
 }
 

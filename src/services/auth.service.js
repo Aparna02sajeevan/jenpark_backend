@@ -12,11 +12,10 @@ async function registerUser(data) {
 
     const passwordHash = await bcrypt.hash(data.password, 10);
 
-    if (!data.file) {
-        throw new ApiError(400, 'Profile picture is required');
+    let profilePicture = null;
+    if (data.file) {
+        profilePicture = await s3Service.uploadFile(data.file);
     }
-
-    const profilePicture = await s3Service.uploadFile(data.file);
 
     const user = await userRepository.createUser({
         name: data.name,
